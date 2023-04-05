@@ -6,6 +6,8 @@ The goal was to get a better grasp of how such an agent works and understand it 
 
 Langchain is great, but it already has a few more files and abstraction layers, so I thought it would be nice to build the most important parts of a simple agent from scratch.
 
+Some more infos are in <a href="https://news.ycombinator.com/item?id=35446171">this Hacker News discussion from April 5th 2023</a> and the <a href="https://www.paepper.com/blog/posts/intelligent-agents-guided-by-llms/">related blog post</a>.
+
 ### How it works
 
 The agent works like this:
