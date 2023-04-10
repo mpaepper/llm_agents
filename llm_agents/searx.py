@@ -27,7 +27,7 @@ def _searx_search_results(params) -> list[dict[str, Any]]:
     }
 
     if params['safesearch']:
-        search_params['safe'] = 1
+        search_params['safesearch'] = 1
 
     res = requests.post(params['instance_url'], data=search_params)
     json_results = json.loads(res.content)
