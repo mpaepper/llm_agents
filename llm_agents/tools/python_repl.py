@@ -1,4 +1,5 @@
 import sys
+import re
 from io import StringIO
 from typing import Dict, Optional
 
@@ -44,7 +45,7 @@ class PythonREPLTool(ToolInterface):
     python_repl: PythonREPL = Field(default_factory=_get_default_python_repl)
 
     def use(self, input_text: str) -> str:
-        input_text = input_text.strip().strip("```")
+        input_text = re.sub(r'^.*[`]{3}.*\n?', '', input_text, flags=re.MULTILINE)
         return self.python_repl.run(input_text)
 
 
