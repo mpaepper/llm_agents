@@ -25,7 +25,14 @@ For more details on how it works, check out <a href="https://www.paepper.com/blo
 
 ### How to use it
 
-You can install this libaray locally by running: `pip install -e .` inside it's directory after cloning it.
+You can install this library locally by running: 
+
+```
+pip install -r requirements.txt
+pip install -e .
+```
+
+inside it's directory after cloning it.
 
 You also need to provide the following env variables:
 
