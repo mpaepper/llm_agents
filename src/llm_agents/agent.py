@@ -55,6 +55,7 @@ class Agent(BaseModel):
         return {tool.name: tool for tool in self.tools}
 
     def run(self, question: str, max_iterations: int = None):
+        """Synchronous version of run"""
         # Reset thinking for new run
         self.thinking = []
         previous_responses = []
@@ -103,9 +104,67 @@ class Agent(BaseModel):
         
         # If we reach max loops without a final answer
         return "I couldn't find a definitive answer within the allowed number of steps."
+        
+    async def run_async(self, question: str, max_iterations: int = None):
+        """Asynchronous version of run"""
+        # Reset thinking for new run
+        self.thinking = []
+        previous_responses = []
+        num_loops = 0
+        # Use provided max_iterations if specified, otherwise use self.max_loops
+        max_loops = max_iterations if max_iterations is not None else self.max_loops
+        
+        prompt = self.prompt_template.format(
+                today = datetime.date.today(),
+                tool_description=self.tool_description,
+                tool_names=self.tool_names,
+                question=question,
+                previous_responses='{previous_responses}'
+        )
+        print(prompt.format(previous_responses=''))
+        while num_loops < max_loops:
+            num_loops += 1
+            curr_prompt = prompt.format(previous_responses='\n'.join(previous_responses))
+            generated, tool, tool_input = await self.decide_next_action_async(curr_prompt)
+            
+            # Record thinking step
+            thinking_step = {
+                "step": num_loops,
+                "thought": generated,
+                "tool": tool,
+                "tool_input": tool_input
+            }
+            
+            if tool == 'Final Answer':
+                thinking_step["result"] = tool_input
+                self.thinking.append(thinking_step)
+                return tool_input
+                
+            if tool not in self.tool_by_names:
+                raise ValueError(f"Unknown tool: {tool}")
+                
+            tool_result = await self.tool_by_names[tool].use_async(tool_input)
+            generated += f"\n{OBSERVATION_TOKEN} {tool_result}\n{THOUGHT_TOKEN}"
+            
+            # Add observation to thinking step
+            thinking_step["observation"] = tool_result
+            self.thinking.append(thinking_step)
+            
+            print(generated)
+            previous_responses.append(generated)
+        
+        # If we reach max loops without a final answer
+        return "I couldn't find a definitive answer within the allowed number of steps."
 
-    def decide_next_action(self, prompt: str) -> str:
+    def decide_next_action(self, prompt: str) -> Tuple[str, str, str]:
+        """Synchronous version of decide_next_action"""
         generated = self.llm.generate(prompt, stop=self.stop_pattern)
+        tool, tool_input = self._parse(generated)
+        return generated, tool, tool_input
+        
+    async def decide_next_action_async(self, prompt: str) -> Tuple[str, str, str]:
+        """Asynchronous version of decide_next_action"""
+        generated = await self.llm.generate_async(prompt, stop=self.stop_pattern)
         tool, tool_input = self._parse(generated)
         return generated, tool, tool_input
 
@@ -127,3 +186,14 @@ if __name__ == '__main__':
 
     print(f"Final answer is {result}")
     print(f"Agent thinking: {agent.thinking}")
+    
+    # Example of async usage
+    import asyncio
+    
+    async def test_async():
+        agent = Agent(llm=ChatLLM(), tools=[PythonREPLTool()])
+        result = await agent.run_async("What is 7 * 9 - 34 in Python?")
+        print(f"Final answer is {result}")
+        print(f"Agent thinking: {agent.thinking}")
+        
+    # asyncio.run(test_async())

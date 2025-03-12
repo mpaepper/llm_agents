@@ -73,11 +73,37 @@ async def query_agent(
     query: AgentQuery,
     service: AgentService = Depends(get_agent_service)
 ):
-    """Query an agent with a prompt."""
-    logger.info(f"Querying agent: {query.query}")
+    """Query an agent with a prompt (asynchronous)."""
+    logger.info(f"Querying agent asynchronously: {query.query}")
     
     try:
-        result = service.run_agent_query(
+        # Use the async version of run_agent_query
+        result = await service.run_agent_query_async(
+            query=query.query,
+            max_iterations=query.max_iterations,
+            tools=query.tools
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Error querying agent: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error querying agent: {str(e)}"
+        )
+        
+@app.post("/query/sync", response_model=AgentResponse, tags=["agent"])
+async def query_agent_sync(
+    query: AgentQuery,
+    service: AgentService = Depends(get_agent_service)
+):
+    """Query an agent with a prompt (synchronous)."""
+    logger.info(f"Querying agent synchronously: {query.query}")
+    
+    try:
+        # Use the synchronous version but run it in a thread pool to avoid blocking
+        import asyncio
+        result = await asyncio.to_thread(
+            service.run_agent_query,
             query=query.query,
             max_iterations=query.max_iterations,
             tools=query.tools
