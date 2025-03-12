@@ -1,0 +1,10 @@
+name: llm-agent-server
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - poetry>=1.6.0
+  - pip:
+    - poetry-core 

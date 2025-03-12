@@ -40,6 +40,7 @@ class Agent(BaseModel):
     max_loops: int = 15
     # The stop pattern is used, so the LLM does not hallucinate until the end
     stop_pattern: List[str] = [f'\n{OBSERVATION_TOKEN}', f'\n\t{OBSERVATION_TOKEN}']
+    thinking: List[Dict] = []
 
     @property
     def tool_description(self) -> str:
@@ -53,9 +54,14 @@ class Agent(BaseModel):
     def tool_by_names(self) -> Dict[str, ToolInterface]:
         return {tool.name: tool for tool in self.tools}
 
-    def run(self, question: str):
+    def run(self, question: str, max_iterations: int = None):
+        # Reset thinking for new run
+        self.thinking = []
         previous_responses = []
         num_loops = 0
+        # Use provided max_iterations if specified, otherwise use self.max_loops
+        max_loops = max_iterations if max_iterations is not None else self.max_loops
+        
         prompt = self.prompt_template.format(
                 today = datetime.date.today(),
                 tool_description=self.tool_description,
@@ -64,18 +70,39 @@ class Agent(BaseModel):
                 previous_responses='{previous_responses}'
         )
         print(prompt.format(previous_responses=''))
-        while num_loops < self.max_loops:
+        while num_loops < max_loops:
             num_loops += 1
             curr_prompt = prompt.format(previous_responses='\n'.join(previous_responses))
             generated, tool, tool_input = self.decide_next_action(curr_prompt)
+            
+            # Record thinking step
+            thinking_step = {
+                "step": num_loops,
+                "thought": generated,
+                "tool": tool,
+                "tool_input": tool_input
+            }
+            
             if tool == 'Final Answer':
+                thinking_step["result"] = tool_input
+                self.thinking.append(thinking_step)
                 return tool_input
+                
             if tool not in self.tool_by_names:
                 raise ValueError(f"Unknown tool: {tool}")
+                
             tool_result = self.tool_by_names[tool].use(tool_input)
             generated += f"\n{OBSERVATION_TOKEN} {tool_result}\n{THOUGHT_TOKEN}"
+            
+            # Add observation to thinking step
+            thinking_step["observation"] = tool_result
+            self.thinking.append(thinking_step)
+            
             print(generated)
             previous_responses.append(generated)
+        
+        # If we reach max loops without a final answer
+        return "I couldn't find a definitive answer within the allowed number of steps."
 
     def decide_next_action(self, prompt: str) -> str:
         generated = self.llm.generate(prompt, stop=self.stop_pattern)
@@ -99,3 +126,4 @@ if __name__ == '__main__':
     result = agent.run("What is 7 * 9 - 34 in Python?")
 
     print(f"Final answer is {result}")
+    print(f"Agent thinking: {agent.thinking}")

@@ -47,9 +47,9 @@ def search_hn(query: str, crawl_urls: bool) -> str:
 class HackerNewsSearchTool(ToolInterface):
     """Tool to get some insight from Hacker News users"""
 
-    name = "hacker news search"
-    description = "Get insight from hacker news users to specific search terms. Input should be a search term (e.g. How to get rich?). The output will be the most recent stories related to it with a user comment."
-    crawl_urls = False
+    name: str = "hacker news search"
+    description: str = "Get insight from hacker news users to specific search terms. Input should be a search term (e.g. How to get rich?). The output will be the most recent stories related to it with a user comment."
+    crawl_urls: bool = False
 
     def use(self, input_text: str) -> str:
         return search_hn(input_text, self.crawl_urls)

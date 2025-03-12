@@ -1,4 +1,5 @@
 import sys
+import re
 from io import StringIO
 from typing import Dict, Optional
 
@@ -44,12 +45,34 @@ class PythonREPLTool(ToolInterface):
     python_repl: PythonREPL = Field(default_factory=_get_default_python_repl)
 
     def use(self, input_text: str) -> str:
-        input_text = input_text.strip().strip("```")
+        # Strip any leading/trailing whitespace
+        input_text = input_text.strip()
+        
+        # Remove code block formatting with regex
+        # This handles cases like ```python, ```py, etc.
+        if input_text.startswith("```"):
+            # Match the opening code fence with optional language identifier
+            pattern = r"^```[\w]*\s*(.*?)```\s*$"
+            match = re.search(pattern, input_text, re.DOTALL)
+            if match:
+                input_text = match.group(1).strip()
+            else:
+                # Fallback to simple stripping if regex doesn't match
+                input_text = input_text.strip("```").strip()
+        
         return self.python_repl.run(input_text)
 
 
 if __name__ == '__main__':
     repl_tool = PythonREPLTool()
     result = repl_tool.use('print(5 * 7)')
+    assert result == "35\n"
+    print(result)
+    
+    # Test with code block
+    code_block = '''```python
+    print(5 * 7)
+    ```'''
+    result = repl_tool.use(code_block)
     assert result == "35\n"
     print(result)

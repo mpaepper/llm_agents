@@ -74,8 +74,8 @@ def search(query: str) -> str:
 class SearxSearchTool(ToolInterface):
     """Tool for Searx search results."""
 
-    name = "Searx Search"
-    description = "Get specific information from a search query. Input should be a question like 'How to add number in Clojure?'. Result will be the answer to the question."
+    name: str = "Searx Search"
+    description: str = "Get specific information from a search query. Input should be a question like 'How to add number in Clojure?'. Result will be the answer to the question."
 
     def use(self, input_text: str) -> str:
         return search(input_text)
