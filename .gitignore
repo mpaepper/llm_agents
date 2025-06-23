@@ -38,3 +38,24 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+pytest_cache/
+
+# Claude
+.claude/*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
