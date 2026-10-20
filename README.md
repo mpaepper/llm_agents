@@ -55,3 +55,39 @@ print(f"Final answer is {result}")
 ```
 
 Of course, you can also build your custom tools or omit tools, for exmaple if you don't want to create a SERPAPI key.
+
+### Web search without a search API key
+
+The CLI uses [Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp)
+for free web search and page fetching when `SERPAPI_API_KEY` is unset or empty.
+Search uses Fast mode, without a Parallel account or API key. Set
+`SERPAPI_API_KEY` to keep using Google Search through SerpAPI; a configured
+provider's errors are surfaced without switching providers.
+
+The existing agent uses the OpenAI 0.x and Pydantic 1.x APIs. For a compatible
+installation in a fresh virtual environment:
+
+```sh
+pip install -r requirements.txt 'openai<1' 'pydantic<2' beautifulsoup4
+pip install -e .
+export OPENAI_API_KEY='your-openai-key'
+python run_agent.py
+```
+
+To choose tools explicitly:
+
+```python
+from llm_agents import Agent, ChatLLM, ParallelSearchTool, ParallelFetchTool
+
+agent = Agent(llm=ChatLLM(), tools=[ParallelSearchTool(), ParallelFetchTool()])
+result = agent.run("What does https://www.python.org/ say about Python?")
+```
+
+`Parallel Search` accepts a question and returns source URLs and excerpts.
+`Parallel Fetch` accepts one HTTP or HTTPS URL and reads that page when search
+excerpts are insufficient. Both have a configurable `timeout` in seconds
+(default 30 per HTTP request). Network, protocol and quota errors propagate to
+the caller, and calls are not retried automatically. Free access has usage limits.
+Each `Agent.run` shares a random conversation ID across its search and fetch
+calls; a new run starts a new ID. Direct `tool.use` calls are standalone runs.
+Explicit `Agent.tools` lists are unchanged: omit search/fetch tools to disable them.

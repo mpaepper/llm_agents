@@ -4,7 +4,7 @@ import re
 from pydantic import BaseModel
 from typing import List, Dict, Tuple
 from llm_agents.llm import ChatLLM
-from llm_agents.tools.base import ToolInterface
+from llm_agents.tools.base import ToolInterface, tool_run
 from llm_agents.tools.python_repl import PythonREPLTool
 
 
@@ -53,6 +53,7 @@ class Agent(BaseModel):
     def tool_by_names(self) -> Dict[str, ToolInterface]:
         return {tool.name: tool for tool in self.tools}
 
+    @tool_run
     def run(self, question: str):
         previous_responses = []
         num_loops = 0
